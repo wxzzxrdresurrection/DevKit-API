@@ -35,7 +35,6 @@ app.doc('/openapi.json', {
   },
 })
 
-serve({ fetch: app.fetch, port: PORT }, () => {
-  console.log(`DevKit API corriendo en http://localhost:${PORT}`)
-  console.log(`Docs en http://localhost:${PORT}/docs`)
+serve({ fetch: app.fetch, port: PORT, hostname: '0.0.0.0' }, () => {
+  console.log(`DevKit API corriendo`)
 })
