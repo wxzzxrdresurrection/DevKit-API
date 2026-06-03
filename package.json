@@ -2,6 +2,9 @@
   "packageManager": "pnpm@9.0.0",
   "name": "dev_kit",
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
