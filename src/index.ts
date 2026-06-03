@@ -13,7 +13,11 @@ const app = new OpenAPIHono()
 const PORT = 4200
 
 app.onError(errorHandler)
-app.use('*', cors())
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type'],
+}))
 app.use('*', rateLimitMiddleware)
 
 app.route('/img', imgRoute)
