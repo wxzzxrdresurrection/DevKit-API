@@ -3,7 +3,7 @@ builder = "nixpacks"
 buildCommand = "pnpm install && pnpm prisma generate && pnpm build"
 
 [deploy]
-startCommand = "pnpm prisma migrate deploy && node dist/index.js"
+startCommand = "pnpm prisma migrate deploy && node dist/src/index.js"
 healthcheckPath = "/docs"
 
 [nixpacks]
