@@ -2,7 +2,7 @@
 import sharp from 'sharp'
 import { createCanvas, GlobalFonts } from '@napi-rs/canvas'
 import path from 'path'
-
+import fs from 'fs'
 interface ImageOptions {
   width: number
   height: number
@@ -11,8 +11,9 @@ interface ImageOptions {
   format: 'jpeg' | 'png' | 'webp'
 }
 
-const fontPath = path.resolve(import.meta.dirname, '../assets/fonts/SpaceMono-Bold.ttf')
+const fontPath = path.resolve(import.meta.dirname, '../assets/SpaceMono-Bold.ttf')
 GlobalFonts.registerFromPath(fontPath, 'CustomMonospace')
+console.log("¿La fuente existe en el disco?:", fs.existsSync(fontPath));
 
 function hexToRgb(hex: string) {
   const n = parseInt(hex, 16)
