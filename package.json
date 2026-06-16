@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && cp -r src/assets dist/src/assets",
     "start": "node dist/src/index.js"
   },
   "dependencies": {

@@ -1,6 +1,7 @@
 // @ts-ignore
 import sharp from 'sharp'
-import { createCanvas } from '@napi-rs/canvas'
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas'
+import path from 'path'
 
 interface ImageOptions {
   width: number
@@ -9,6 +10,9 @@ interface ImageOptions {
   text: string
   format: 'jpeg' | 'png' | 'webp'
 }
+
+const fontPath = path.resolve(__dirname, '../assets/fonts/SpaceMono-Bold.ttf')
+GlobalFonts.registerFromPath(fontPath, 'CustomMonospace')
 
 function hexToRgb(hex: string) {
   const n = parseInt(hex, 16)
@@ -27,19 +31,18 @@ export async function generateImage(opts: ImageOptions): Promise<Buffer> {
   const canvas = createCanvas(width, height)
   const ctx = canvas.getContext('2d')
 
-  // Fondo
   ctx.fillStyle = `#${bg}`
   ctx.fillRect(0, 0, width, height)
 
   // Texto centrado
-  const fontSize = Math.max(12, Math.min(Math.floor(width / text.length * 1.4), 48))
+  const fontSize = Math.max(12, Math.min(Math.floor((width / text.length) * 1.4), 48))
   ctx.fillStyle = getTextColor(bg)
-  ctx.font = `bold ${fontSize}px monospace`
+
+  ctx.font = `${fontSize}px "CustomMonospace"`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(text, width / 2, height / 2)
 
-  // Convertir a buffer con Sharp para soporte de webp y compresión
   const pngBuffer = canvas.toBuffer('image/png')
 
   return sharp(pngBuffer)
