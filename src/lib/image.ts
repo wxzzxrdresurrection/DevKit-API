@@ -11,7 +11,7 @@ interface ImageOptions {
   format: 'jpeg' | 'png' | 'webp'
 }
 
-const fontPath = path.resolve(__dirname, '../assets/fonts/SpaceMono-Bold.ttf')
+const fontPath = path.resolve(import.meta.dirname, '../assets/fonts/SpaceMono-Bold.ttf')
 GlobalFonts.registerFromPath(fontPath, 'CustomMonospace')
 
 function hexToRgb(hex: string) {
