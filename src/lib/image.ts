@@ -35,18 +35,22 @@ export async function generateImage(opts: ImageOptions): Promise<Buffer> {
   ctx.fillStyle = `#${bg}`
   ctx.fillRect(0, 0, width, height)
 
-  // Texto centrado
-  const fontSize = Math.max(12, Math.min(Math.floor((width / text.length) * 1.4), 48))
-  ctx.fillStyle = getTextColor(bg)
+  const displayText = text && text.trim() !== ''
+    ? text
+    : 'Your text here'
 
-  ctx.font = `${fontSize}px "CustomMonospace"`
+  const fontSize = Math.max(12, Math.min(Math.floor((width / displayText.length) * 1.4), 48))
+
+  ctx.fillStyle = getTextColor(bg)
+  ctx.font = `${fontSize}px "Space Mono"`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(text, width / 2, height / 2)
+  ctx.fillText(displayText, width / 2, height / 2)
 
+  // Convertir a buffer con Sharp
   const pngBuffer = canvas.toBuffer('image/png')
 
   return sharp(pngBuffer)
     .toFormat(format)
     .toBuffer()
-}
+  }
