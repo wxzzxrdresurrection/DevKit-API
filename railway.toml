@@ -8,3 +8,4 @@ healthcheckPath = "/docs"
 
 [nixpacks]
 nodeVersion = "20"
+pkgs = ["librsvg"]
