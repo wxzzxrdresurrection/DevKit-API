@@ -1,7 +1,6 @@
-import fs from 'node:fs'
-import path from 'node:path'
 // @ts-ignore
 import sharp from 'sharp'
+
 interface ImageOptions {
   width: number
   height: number
@@ -21,52 +20,40 @@ function getTextColor(bg: string) {
   return luminance > 0.5 ? '333333' : 'eeeeee'
 }
 
-function getFontBase64(): string {
-  const fontPath = path.resolve(
-    'node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2'
-  )
-  try {
-    const font = fs.readFileSync(fontPath)
-    return font.toString('base64')
-  } catch {
-    return ''
-  }
-}
-
-const fontBase64 = getFontBase64()
-
 export async function generateImage(opts: ImageOptions): Promise<Buffer> {
   const { width, height, bg, text, format } = opts
+  const { r, g, b } = hexToRgb(bg)
   const textColor = getTextColor(bg)
   const fontSize = Math.max(12, Math.min(Math.floor(width / text.length * 1.2), 48))
 
-  const fontFace = fontBase64
-    ? `<defs>
-        <style>
-          @font-face {
-            font-family: 'Inter';
-            src: url('data:font/woff2;base64,${fontBase64}');
-          }
-        </style>
-      </defs>`
-    : ''
+  // Imagen base con color sólido
+  const base = sharp({
+    create: {
+      width,
+      height,
+      channels: 3,
+      background: { r, g, b },
+    }
+  })
 
-  const svg = `
+  // SVG solo con el texto — sin rect ni fondo
+  const textSvg = Buffer.from(`
     <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-      ${fontFace}
-      <rect width="100%" height="100%" fill="#${bg}"/>
       <text
-        x="50%" y="50%"
-        font-family="${fontBase64 ? 'Inter' : 'sans-serif'}"
+        x="50%"
+        y="50%"
+        font-family="monospace"
         font-size="${fontSize}"
         fill="#${textColor}"
         text-anchor="middle"
         dominant-baseline="middle"
+        font-weight="bold"
       >${text}</text>
     </svg>
-  `
+  `)
 
-  return sharp(Buffer.from(svg))
+  return base
+    .composite([{ input: textSvg, top: 0, left: 0 }])
     .toFormat(format)
     .toBuffer()
 }
