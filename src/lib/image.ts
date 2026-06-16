@@ -1,5 +1,6 @@
 // @ts-ignore
 import sharp from 'sharp'
+import { createCanvas } from '@napi-rs/canvas'
 
 interface ImageOptions {
   width: number
@@ -17,43 +18,31 @@ function hexToRgb(hex: string) {
 function getTextColor(bg: string) {
   const { r, g, b } = hexToRgb(bg)
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.5 ? '333333' : 'eeeeee'
+  return luminance > 0.5 ? '#333333' : '#eeeeee'
 }
 
 export async function generateImage(opts: ImageOptions): Promise<Buffer> {
   const { width, height, bg, text, format } = opts
-  const { r, g, b } = hexToRgb(bg)
-  const textColor = getTextColor(bg)
-  const fontSize = Math.max(12, Math.min(Math.floor(width / text.length * 1.2), 48))
 
-  // Imagen base con color sólido
-  const base = sharp({
-    create: {
-      width,
-      height,
-      channels: 3,
-      background: { r, g, b },
-    }
-  })
+  const canvas = createCanvas(width, height)
+  const ctx = canvas.getContext('2d')
 
-  // SVG solo con el texto — sin rect ni fondo
-  const textSvg = Buffer.from(`
-    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-      <text
-        x="50%"
-        y="50%"
-        font-family="monospace"
-        font-size="${fontSize}"
-        fill="#${textColor}"
-        text-anchor="middle"
-        dominant-baseline="middle"
-        font-weight="bold"
-      >${text}</text>
-    </svg>
-  `)
+  // Fondo
+  ctx.fillStyle = `#${bg}`
+  ctx.fillRect(0, 0, width, height)
 
-  return base
-    .composite([{ input: textSvg, top: 0, left: 0 }])
+  // Texto centrado
+  const fontSize = Math.max(12, Math.min(Math.floor(width / text.length * 1.4), 48))
+  ctx.fillStyle = getTextColor(bg)
+  ctx.font = `bold ${fontSize}px monospace`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(text, width / 2, height / 2)
+
+  // Convertir a buffer con Sharp para soporte de webp y compresión
+  const pngBuffer = canvas.toBuffer('image/png')
+
+  return sharp(pngBuffer)
     .toFormat(format)
     .toBuffer()
 }
