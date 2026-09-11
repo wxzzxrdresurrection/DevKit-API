@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { generateImage } from '../lib/image.js'
+import { docsUrl } from '../config.js'
 
 export const imgRoute = new OpenAPIHono()
 
@@ -35,7 +36,7 @@ imgRoute.openapi(route, async (c) => {
     return c.json({
       error: 'invalid_dimensions',
       message: 'Width y height deben estar entre 1 y 5000',
-      docs: 'http://localhost:4200/docs',
+      docs: docsUrl(c.req.url),
     }, 400)
   }
 

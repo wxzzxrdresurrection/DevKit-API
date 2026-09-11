@@ -7,31 +7,31 @@ function getFaker(locale: Locale) {
   return locale === 'es' ? fakerES : fakerEN
 }
 
-function generateUser(f: typeof faker) {
+function generateUser(f: typeof faker, base: string) {
   return {
     id:        f.string.uuid(),
     name:      f.person.fullName(),
     email:     f.internet.email(),
     phone:     f.phone.number(),
-    avatar:    `http://localhost:3000/img/80x80?bg=${f.color.rgb().replace('#', '')}&text=avatar`,
+    avatar:    `${base}/img/80x80?bg=${f.color.rgb().replace('#', '')}&text=avatar`,
     address:   f.location.streetAddress(true),
     birthdate: f.date.birthdate({ min: 18, max: 65, mode: 'age' }).toISOString().split('T')[0],
   }
 }
 
-function generateProduct(f: typeof faker) {
+function generateProduct(f: typeof faker, base: string) {
   return {
     id:          f.string.uuid(),
     name:        f.commerce.productName(),
     description: f.commerce.productDescription(),
     price:       parseFloat(f.commerce.price({ min: 1, max: 999 })),
     category:    f.commerce.department(),
-    image:       `http://localhost:3000/img/400x300?bg=${f.color.rgb().replace('#', '')}&text=product`,
+    image:       `${base}/img/400x300?bg=${f.color.rgb().replace('#', '')}&text=product`,
     stock:       f.number.int({ min: 0, max: 500 }),
   }
 }
 
-function generatePost(f: typeof faker) {
+function generatePost(f: typeof faker, _base: string) {
   return {
     id:        f.string.uuid(),
     title:     f.lorem.sentence(),
@@ -43,7 +43,7 @@ function generatePost(f: typeof faker) {
   }
 }
 
-function generateCompany(f: typeof faker) {
+function generateCompany(f: typeof faker, _base: string) {
   return {
     id:        f.string.uuid(),
     name:      f.company.name(),
@@ -55,17 +55,29 @@ function generateCompany(f: typeof faker) {
   }
 }
 
-export function generateFake(schema: Schema, count: number, locale: Locale, seed?: number): object[] {
+/**
+ * @param base Origen de la API (ej. http://localhost:3200). Las URLs de avatar
+ *   e imagen se construyen sobre el, no sobre un host fijo.
+ */
+export function generateFake(
+  schema: Schema,
+  count: number,
+  locale: Locale,
+  base: string,
+  seed?: number,
+): object[] {
   const f = getFaker(locale)
 
-  if (seed !== undefined) f.seed(seed)
+  // Las instancias de faker son singletons de modulo: sin reseed, una peticion
+  // sin `seed` seguiria la secuencia que dejo la anterior peticion sembrada.
+  f.seed(seed !== undefined ? seed : Math.floor(Math.random() * 2 ** 48))
 
-  const generators: Record<Schema, (f: typeof faker) => object> = {
+  const generators: Record<Schema, (f: typeof faker, base: string) => object> = {
     user:    generateUser,
     product: generateProduct,
     post:    generatePost,
     company: generateCompany,
   }
 
-  return Array.from({ length: count }, () => generators[schema](f))
+  return Array.from({ length: count }, () => generators[schema](f, base))
 }
