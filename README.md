@@ -2,7 +2,7 @@
 
 Toolkit HTTP para desarrolladores full-stack. Genera imágenes placeholder, texto Lorem, datos ficticios y mock APIs REST — todo desde una URL, sin autenticación ni setup.
 
-**UI:** [devkit-ui](https://github.com/wxzzxrdresurrection/devkit-ui) · **Docs:** [devkit.tudominio.com/docs](https://devkit.tudominio.com/docs)
+**UI:** [devkit-ui](https://github.com/wxzzxrdresurrection/devkit-ui) · **Docs:** `/docs` en tu instancia (ej. http://localhost:3200/docs)
 
 ---
 
@@ -24,13 +24,13 @@ Genera imágenes on-the-fly con las dimensiones exactas que necesites.
 
 ```bash
 # Imagen básica
-curl http://localhost:4200/img/400x300
+curl http://localhost:3200/img/400x300
 
 # Con color y texto personalizados
-curl http://localhost:4200/img/800x400?bg=1E3A5F&text=Banner
+curl http://localhost:3200/img/800x400?bg=1E3A5F&text=Banner
 
 # En formato webp
-curl http://localhost:4200/img/400x300?format=webp
+curl http://localhost:3200/img/400x300?format=webp
 ```
 
 | Parámetro | Tipo  | Descripción                             | Default    |
@@ -48,13 +48,13 @@ Lorem ipsum en el formato y cantidad que necesites.
 
 ```bash
 # 5 oraciones en JSON
-curl "http://localhost:4200/text?type=sentences&count=5&format=json"
+curl "http://localhost:3200/text?type=sentences&count=5&format=json"
 
 # 10 palabras en plain text
-curl "http://localhost:4200/text?type=words&count=10"
+curl "http://localhost:3200/text?type=words&count=10"
 
 # 2 párrafos en HTML
-curl "http://localhost:4200/text?type=paragraphs&count=2&format=html"
+curl "http://localhost:3200/text?type=paragraphs&count=2&format=html"
 ```
 
 | Parámetro | Tipo  | Descripción                                 | Default       |
@@ -71,10 +71,10 @@ Genera objetos JSON coherentes por schema usando `@faker-js/faker`.
 
 ```bash
 # 3 usuarios en español
-curl "http://localhost:4200/fake/user?count=3&locale=es"
+curl "http://localhost:3200/fake/user?count=3&locale=es"
 
 # 5 productos con seed reproducible
-curl "http://localhost:4200/fake/product?count=5&seed=42"
+curl "http://localhost:3200/fake/product?count=5&seed=42"
 ```
 
 **Schemas disponibles:** `user` · `product` · `post` · `company`
@@ -94,11 +94,11 @@ Registra endpoints personalizados y consúmelos como una API real. Sin autentica
 
 ```bash
 # 1. Crear proyecto
-curl -X POST http://localhost:4200/mock/create
+curl -X POST http://localhost:3200/mock/create
 # → { "projectId": "a3f9b2c1-..." }
 
 # 2. Registrar endpoint
-curl -X POST http://localhost:4200/mock/{projectId}/register \
+curl -X POST http://localhost:3200/mock/{projectId}/register \
   -H "Content-Type: application/json" \
   -d '{
     "path": "/users",
@@ -108,15 +108,15 @@ curl -X POST http://localhost:4200/mock/{projectId}/register \
     "delay": 500
   }'
 
-# 3. Consumir endpoint (nota el prefijo /run)
-curl http://localhost:4200/mock/{projectId}/users
+# 3. Consumir endpoint
+curl http://localhost:3200/mock/{projectId}/users
 # → { "users": [{ "id": 1, "name": "John Doe" }] }
 
 # 4. Listar endpoints del proyecto
-curl http://localhost:4200/mock/{projectId}/endpoints
+curl http://localhost:3200/mock/{projectId}/endpoints
 
 # 5. Eliminar proyecto
-curl -X DELETE http://localhost:4200/mock/{projectId}
+curl -X DELETE http://localhost:3200/mock/{projectId}
 ```
 
 | Endpoint                            | Método | Descripción          |
@@ -138,7 +138,7 @@ Todos los endpoints retornan errores en el mismo formato:
 {
   "error": "invalid_dimensions",
   "message": "Width must be between 1 and 5000",
-  "docs": "https://devkit.tudominio.com/docs"
+  "docs": "http://localhost:3200/docs"
 }
 ```
 
@@ -154,31 +154,55 @@ Todos los endpoints retornan errores en el mismo formato:
 
 ## Correr en local
 
+### Con Docker (recomendado)
+
+Levanta la API y su PostgreSQL ya cableados entre si. No necesitas Postgres
+instalado:
+
 ```bash
-# 1. Clonar el repo
 git clone https://github.com/wxzzxrdresurrection/devkit-api.git
 cd devkit-api
+docker compose up
+```
 
-# 2. Instalar dependencias
+API en `http://localhost:3200` · docs en `http://localhost:3200/docs`.
+
+### Sin Docker
+
+`/img`, `/text` y `/fake` **no necesitan base de datos** — solo la herramienta de
+mock la usa. Si no te interesan los mocks, puedes saltarte Postgres entero:
+
+```bash
 pnpm install
-
-# 3. Configurar variables de entorno
-cp .env.example .env
-# Editar DATABASE_URL en .env
-
-# 4. Correr migraciones
-pnpm prisma migrate dev
-
-# 5. Iniciar servidor
+pnpm prisma generate
 pnpm dev
 ```
 
-El servidor corre en `http://localhost:4200` y los docs en `http://localhost:4200/docs`.
+La API arranca y avisa por consola de que `/mock` no esta disponible.
+
+Para tener tambien los mocks, necesitas un PostgreSQL accesible:
+
+```bash
+cp .env.example .env          # ajusta DATABASE_URL
+pnpm prisma migrate deploy
+pnpm dev
+```
+
+---
+
+## UI
+
+[devkit-ui](https://github.com/wxzzxrdresurrection/devkit-ui) es el playground web.
+Apunta a `http://localhost:3200` por defecto, asi que con la API corriendo
+funciona sin configurar nada.
 
 ---
 
 ## Variables de entorno
 
-| Variable         | Descripción                  |
-| ---------------- | ----------------------------- |
-| `DATABASE_URL` | URL de conexión a PostgreSQL |
+| Variable | Descripción | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | Conexión a PostgreSQL. Solo la usa la herramienta de mock | — |
+| `PORT` | Puerto del servidor | `3200` |
+| `TRUST_PROXY` | `true` solo detrás de un proxy de confianza (Railway, nginx). Decide si se hace caso a `x-forwarded-for` para el rate limit | `false` |
+| `RATE_LIMIT` | Requests por minuto y por IP | `60` |

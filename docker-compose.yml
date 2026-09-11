@@ -1,0 +1,41 @@
+# Levanta la API con su Postgres ya cableado:
+#
+#   docker compose up
+#
+# API  -> http://localhost:3200
+# Docs -> http://localhost:3200/docs
+#
+# No necesitas Postgres instalado en tu maquina.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: devkit
+      POSTGRES_PASSWORD: devkit
+      POSTGRES_DB: devkit
+    ports:
+      - '5432:5432'
+    volumes:
+      - devkit-db:/var/lib/postgresql/data
+    healthcheck:
+      # La API espera a que Postgres acepte conexiones, no solo a que arranque.
+      test: ['CMD-SHELL', 'pg_isready -U devkit -d devkit']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://devkit:devkit@db:5432/devkit
+      PORT: '3200'
+      TRUST_PROXY: 'false'
+    ports:
+      - '3200:3200'
+
+volumes:
+  devkit-db:

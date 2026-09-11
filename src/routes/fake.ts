@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { generateFake } from '../lib/faker.js'
+import { baseUrl } from '../config.js'
 
 export const fakeRoute = new OpenAPIHono()
 
@@ -30,11 +31,11 @@ const route = createRoute({
   },
 })
 
-fakeRoute.openapi(route, (c: any) => {
+fakeRoute.openapi(route, (c) => {
   const { schema } = c.req.valid('param')
   const { count, locale, seed } = c.req.valid('query')
 
-  const data = generateFake(schema, count, locale, seed)
+  const data = generateFake(schema, count, locale, baseUrl(c.req.url), seed)
 
-  return c.json({ schema, count, data })
+  return c.json({ schema, count, data }, 200)
 })

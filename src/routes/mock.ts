@@ -33,7 +33,15 @@ const registerEndpointRoute = createRoute({
       content: {
         'application/json': {
           schema: z.object({
-            path:     z.string().startsWith('/'),
+            path:     z.string()
+              .startsWith('/')
+              .max(512)
+              // Segmentos alfanumericos o `:param`. Cierra la puerta a que el
+              // path acabe siendo interpretado como sintaxis de regex.
+              .regex(
+                /^(\/(:?[A-Za-z0-9_.~-]+)?)+$/,
+                'Usa segmentos alfanumericos o parametros tipo :id (ej. /users/:id)',
+              ),
             method:   z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']).default('GET'),
             status:   z.number().min(100).max(599).default(200),
             response: z.record(z.any(), z.any()).default({}),
@@ -57,11 +65,7 @@ const registerEndpointRoute = createRoute({
 })
 
 mockRoute.openapi(registerEndpointRoute, async (c: any) => {
-  console.log('Registrar endpoint')
   const body = c.req.valid('json')
-
-  console.log("URL Solicitada:", c.req.url);
-  console.log("Parametro capturado:", c.req.param('projectId'));
   const { projectId } = c.req.valid('param' as any)
 
   const project = await prisma.mockProject.findUnique({ where: { id: projectId } })
@@ -194,15 +198,18 @@ mockRoute.all('/:projectId/*', async (c) => {
   const incomingPath = '/' + c.req.path.split(`/mock/${projectId}/`)[1]
   const method = c.req.method
 
-  const endpoints = await prisma.mockEndpoint.findMany({
-    where: { projectId },
+  // Un proyecto sin endpoints existe igualmente: distinguirlo del que no existe
+  // evita que el usuario crea que perdio su projectId.
+  const project = await prisma.mockProject.findUnique({
+    where: { id: projectId },
+    include: { endpoints: true },
   })
 
-  if (endpoints.length === 0) {
-    return c.json({ error: 'project_not_found', message: `Proyecto ${projectId} no existe o no tiene endpoints` }, 404)
+  if (!project) {
+    return c.json({ error: 'project_not_found', message: `Proyecto ${projectId} no existe` }, 404)
   }
 
-  const matched = matchEndpoint(endpoints, incomingPath, method)
+  const matched = matchEndpoint(project.endpoints, incomingPath, method)
 
   if (!matched) {
     return c.json({ error: 'endpoint_not_found', message: `No hay endpoint ${method} ${incomingPath} en este proyecto` }, 404)
